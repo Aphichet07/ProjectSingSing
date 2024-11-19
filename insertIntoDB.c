@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "header.h"
 int i;
+
 struct user_insert
 {
     char user_id[100];
@@ -27,8 +29,8 @@ int get_id_from_log(char *key) {
     }
 
     char line[50];
-    while (fgets(line, sizeof(line), file)) {
-        char *pos = strstr(line, key);
+    while (fgets(line, sizeof(line), file)) {       
+        char *pos = strstr(line, key);          //find substring(key) in line if not found return NULL
         if (pos != NULL) {
             char *value = strchr(line, ':');
             if (value != NULL) {
@@ -70,10 +72,40 @@ int update_id_in_log(const char *key, int value) {
     fclose(file);
 }
 
+char *get_current_date() {
+    static char exp[11];
+    time_t t = time(NULL);
+    struct tm *tm_info = localtime(&t);
+
+    strftime(exp, sizeof(exp), "%d/%m/%Y", tm_info);
+
+    return exp;
+}
+
+char *add_1year(const char *exp) {
+    static char exd[11];
+    struct tm tm_info = {0};
+    int day, month, year;
+
+    sscanf(exp, "%d/%d/%d", &day, &month, &year);
+
+    tm_info.tm_mday = day;
+    tm_info.tm_mon = month - 1;
+    tm_info.tm_year = year - 1900;
+
+    tm_info.tm_year += 1;
+
+    strftime(exd, sizeof(exd), "%d/%m/%Y", &tm_info);
+
+    return exd;
+}
+
 int insert_user(){
     struct user_insert uis[100];
     int user_id;
     char tel[20] = {0}, confirm[5] = {0}, chr_user_id[100];
+    char *exp = get_current_date();
+    char *exd = add_1year(exp);
     
     user_id = get_id_from_log("current_user_id");
     if (user_id == -1) {
@@ -94,7 +126,7 @@ int insert_user(){
             tel[strcspn(tel, "\n")] = '\0';
         }
 
-        printf("confirm(y/n)    : ");
+        printf("confirm(y/n): ");
         fgets(confirm, sizeof(confirm), stdin);
         confirm[strcspn(confirm, "\n")] = '\0';
 
@@ -107,8 +139,8 @@ int insert_user(){
             itoa(user_id, chr_user_id, 10);
             strcpy(uis[user_id].user_id, chr_user_id);
             strcpy(uis[user_id].user_tel, tel);
-            strcpy(uis[user_id].user_exp, "01/01/0001");
-            strcpy(uis[user_id].user_exd, "01/01/0002");
+            strcpy(uis[user_id].user_exp, exp);
+            strcpy(uis[user_id].user_exd, exd);
 
             FILE *user_file;
             user_file = fopen("DB/userDB.dat", "at");
@@ -119,7 +151,7 @@ int insert_user(){
             fprintf(user_file, "%s,%s,%s,%s\n", uis[user_id].user_id, uis[user_id].user_tel, uis[user_id].user_exp, uis[user_id].user_exd);
             fclose(user_file);
 
-            printf("Order added: ID :%s, Tel :%s, EXP :%s, EXD :%s\n", uis[user_id].user_id, uis[user_id].user_tel, uis[user_id].user_exp, uis[user_id].user_exd);
+            printf("Order added: ID :%s Tel :%s EXP :%s EXD :%s\n", uis[user_id].user_id, uis[user_id].user_tel, uis[user_id].user_exp, uis[user_id].user_exd);
 
             update_id_in_log("current_user_id", user_id+1);
             break;
@@ -173,9 +205,10 @@ int insert_order() {
         fprintf(file, "%s,%s,%s\n", ois[order_id].order_id, ois[order_id].order_name, ois[order_id].order_price);
         fclose(file);
 
-        printf("Order added: ID :%s, Name :%s, Price :%s\n", ois[order_id].order_id, ois[order_id].order_name, ois[order_id].order_price);
+        printf("Order added: ID :%s Name :%s Price :%s\n", ois[order_id].order_id, ois[order_id].order_name, ois[order_id].order_price);
 
         update_id_in_log("current_order_id", order_id+ 1);
+        break;
         }
     }
     return 0;
