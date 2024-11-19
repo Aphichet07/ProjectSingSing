@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include "header.h"
 
-int loger(void){
+int loger(){
     FILE *log;
     log = fopen("DB/logDB.dat", "wt");
-    fclose(log);
+
     if(log == NULL) printf("\ninvalid File");
     else printf("\ncreat logDB success");
+    fclose(log);
     log = fopen("DB/logDB.dat", "at");
     fprintf(log, "current_user_id:1");
     fclose(log);

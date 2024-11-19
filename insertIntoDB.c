@@ -11,36 +11,74 @@ struct user_insert
     char user_exd[12];
 };
 
-int log_id_to_int(void){
-    int current_id;
-    char Floger[30];
-    FILE *log;
-    log = fopen("DB/logDB.dat", "rt");
-    fscanf(log, "%s", &Floger);
-    fclose(log);
-    char *ptr = strchr(Floger, ':');
-    if(ptr != NULL){
-        current_id = atoi(ptr + 1);
+struct order_insert
+{
+    char order_id[10];
+    char order_name[30];
+    char order_price[10];
+};
+
+int get_id_from_log(const char *key) {
+    FILE *file;
+    file = fopen("DB/logDB.dat", "rt");
+    if (file == NULL) {
+        printf("Error opening log file.\n");
+        return -1;
     }
-    return current_id;
+
+    char line[50];
+    while (fgets(line, sizeof(line), file)) {
+        char *pos = strstr(line, key);
+        if (pos != NULL) {
+            char *value = strchr(line, ':');
+            if (value != NULL) {
+                fclose(file);
+                return atoi(value + 1);
+            }
+        }
+    }
+    fclose(file);
+    return 0;
 }
 
-int update_log_id(int new_id){ 
-    FILE *log; 
-    if((log = fopen("DB/logDB.dat", "wt")) == NULL){
-        printf("Error opening log file for writing\n"); 
-        return 1; 
-        } 
-    fprintf(log, "current_user_id:%d", new_id); 
-    fclose(log);
+void update_id_in_log(const char *key, int value) {
+    FILE *file = fopen("DB/logDB.dat", "rt");
+    if (file == NULL) {
+        printf("Error opening log file.\n");
+        exit(1);
+    }
+
+    char lines[2][50];
+    int i = 0;
+    while (fgets(lines[i], sizeof(lines[i]), file) && i < 2) {
+        if (strstr(lines[i], key)) {
+            sprintf(lines[i], "%s:%d\n", key, value);
+        }
+        i++;
+    }
+    fclose(file);
+
+    file = fopen("DB/logDB.dat", "wt");
+    if (file == NULL) {
+        printf("Error opening log file for writing.\n");
+        exit(1);
+    }
+
+    for (int j = 0; j < i; j++) {
+        fputs(lines[j], file);
+    }
+    fclose(file);
 }
+
 int main(){
     struct user_insert uis[100];
     int log;
     char tel[20] = {0}, confirm[5] = {0}, chr_log[100];
     
-    log = log_id_to_int();
-    if(log < 0) printf("Error at log file!");
+    log = get_id_from_log("current_user_id");
+    if(log < 0) printf("Error at log file!\n");
+
+
 
     while (1)
     {
@@ -77,17 +115,47 @@ int main(){
                 printf("Error open user file!");
                 return 1;
             }
-            fprintf(user_file, "%s,%s,%s,%s", uis[log].user_id, uis[log].user_tel, uis[log].user_exp, uis[log].user_exd);
+            fprintf(user_file, "%s,%s,%s,%s\n", uis[log].user_id, uis[log].user_tel, uis[log].user_exp, uis[log].user_exd);
             fclose(user_file);
 
             log++;
-            update_log_id(log);
+            update_id_in_log("current_user_id", log);
             break;
         }
     }
     return 0;
 }
 
-int insert_order(){
-    
-}
+/* void insert_order() {
+    struct order_insert ois[100];
+
+    int current_order_id = get_id_from_log("current_order_id");
+    if (current_order_id == -1) {
+        printf("Error reading current_order_id from log.\n");
+        return;
+    }
+
+    sprintf(ois[current_order_id].order_id, "%d", current_order_id);
+
+    printf("Enter Order Name : ");
+    fgets(new_order.order_name, sizeof(new_order.order_name), stdin);
+    new_order.order_name[strcspn(new_order.order_name, "\n")] = '\0';
+
+    printf("Enter Order Price: ");
+    fgets(new_order.order_price, sizeof(new_order.order_price), stdin);
+    new_order.order_price[strcspn(new_order.order_price, "\n")] = '\0';
+
+    FILE *file = fopen("DB/orderDB.dat", "at");
+    if (file == NULL) {
+        printf("Error opening orderDB.dat file for writing.\n");
+        return;
+    }
+
+    fprintf(file, "%s,%s,%s\n", new_order.order_id, new_order.order_name, new_order.order_price);
+    fclose(file);
+
+    printf("Order added: ID=%s, Name=%s, Price=%s\n", new_order.order_id, new_order.order_name, new_order.order_price);
+
+
+    update_id_in_log("current_order_id", current_order_id + 1);
+} */
