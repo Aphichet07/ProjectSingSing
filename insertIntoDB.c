@@ -7,7 +7,7 @@ struct user_insert
 {
     char user_id[100];
     char user_tel[20];
-    char user_exp[12]; // 01/01/0001
+    char user_exp[12];
     char user_exd[12];
 };
 
@@ -18,7 +18,7 @@ struct order_insert
     char order_price[10];
 };
 
-int get_id_from_log(const char *key) {
+int get_id_from_log(char *key) {
     FILE *file;
     file = fopen("DB/logDB.dat", "rt");
     if (file == NULL) {
@@ -41,11 +41,11 @@ int get_id_from_log(const char *key) {
     return 0;
 }
 
-void update_id_in_log(const char *key, int value) {
+int update_id_in_log(const char *key, int value) {
     FILE *file = fopen("DB/logDB.dat", "rt");
     if (file == NULL) {
         printf("Error opening log file.\n");
-        exit(1);
+        return -1;
     }
 
     char lines[2][50];
@@ -70,19 +70,20 @@ void update_id_in_log(const char *key, int value) {
     fclose(file);
 }
 
-int main(){
+int insert_user(){
     struct user_insert uis[100];
-    int log;
-    char tel[20] = {0}, confirm[5] = {0}, chr_log[100];
+    int user_id;
+    char tel[20] = {0}, confirm[5] = {0}, chr_user_id[100];
     
-    log = get_id_from_log("current_user_id");
-    if(log < 0) printf("Error at log file!\n");
-
-
+    user_id = get_id_from_log("current_user_id");
+    if (user_id == -1) {
+        printf("Error reading current user id from log file.\n");
+        return -1;
+    }
 
     while (1)
     {
-        printf("Current ID  : %d\n", log);
+        printf("Current ID  : %d\n", user_id);
         printf("Enter Tel   : ");
         fgets(tel, sizeof(tel), stdin);
         tel[strcspn(tel, "\n")] = '\0';
@@ -93,69 +94,89 @@ int main(){
             tel[strcspn(tel, "\n")] = '\0';
         }
 
-        printf("confirm     : ");
+        printf("confirm(y/n)    : ");
         fgets(confirm, sizeof(confirm), stdin);
         confirm[strcspn(confirm, "\n")] = '\0';
 
-        printf("=========================\n");
+        printf("==============================================================\n");
 
         if (strcmp(confirm, "n") == 0) continue;
         if (strcmp(confirm, "c") == 0) break;
         
         if (strcmp(confirm, "y") == 0){
-            itoa(log, chr_log, 10);
-            strcpy(uis[log].user_id, chr_log);
-            strcpy(uis[log].user_tel, tel);
-            strcpy(uis[log].user_exp, "01/01/0001");
-            strcpy(uis[log].user_exd, "01/01/0002");
+            itoa(user_id, chr_user_id, 10);
+            strcpy(uis[user_id].user_id, chr_user_id);
+            strcpy(uis[user_id].user_tel, tel);
+            strcpy(uis[user_id].user_exp, "01/01/0001");
+            strcpy(uis[user_id].user_exd, "01/01/0002");
 
             FILE *user_file;
             user_file = fopen("DB/userDB.dat", "at");
             if(user_file == NULL){
-                printf("Error open user file!");
-                return 1;
+                printf("Error opening userDB.dat file for writing.\n");
+                return -1;
             }
-            fprintf(user_file, "%s,%s,%s,%s\n", uis[log].user_id, uis[log].user_tel, uis[log].user_exp, uis[log].user_exd);
+            fprintf(user_file, "%s,%s,%s,%s\n", uis[user_id].user_id, uis[user_id].user_tel, uis[user_id].user_exp, uis[user_id].user_exd);
             fclose(user_file);
 
-            log++;
-            update_id_in_log("current_user_id", log);
+            printf("Order added: ID :%s, Tel :%s, EXP :%s, EXD :%s\n", uis[user_id].user_id, uis[user_id].user_tel, uis[user_id].user_exp, uis[user_id].user_exd);
+
+            update_id_in_log("current_user_id", user_id+1);
             break;
         }
     }
     return 0;
 }
 
-/* void insert_order() {
+int insert_order() {
     struct order_insert ois[100];
+    int order_id;
+    char order_name[30], order_price[10], confirm[5], chr_order_id[100];
 
-    int current_order_id = get_id_from_log("current_order_id");
-    if (current_order_id == -1) {
-        printf("Error reading current_order_id from log.\n");
-        return;
+    order_id = get_id_from_log("current_order_id");
+    if (order_id == -1) {
+        printf("Error reading current order id from log file.\n");
+        return -1;
     }
 
-    sprintf(ois[current_order_id].order_id, "%d", current_order_id);
+    while (1)
+    {
+        printf("Current ID          : %d\n", order_id);
+        printf("Enter Order Name    : ");
+        fgets(order_name, sizeof(order_name), stdin);
+        order_name[strcspn(order_name, "\n")] = '\0';
 
-    printf("Enter Order Name : ");
-    fgets(new_order.order_name, sizeof(new_order.order_name), stdin);
-    new_order.order_name[strcspn(new_order.order_name, "\n")] = '\0';
+        printf("Enter Order Price   : ");
+        fgets(order_price, sizeof(order_price), stdin);
+        order_price[strcspn(order_price, "\n")] = '\0';
 
-    printf("Enter Order Price: ");
-    fgets(new_order.order_price, sizeof(new_order.order_price), stdin);
-    new_order.order_price[strcspn(new_order.order_price, "\n")] = '\0';
+        printf("confirm (y/n)       : ");
+        fgets(confirm, sizeof(confirm), stdin);
+        confirm[strcspn(confirm, "\n")] = '\0';
+        if (strcmp(confirm, "n") == 0) continue;
+        if (strcmp(confirm, "c") == 0) break;
+        
+        if (strcmp(confirm, "y") == 0){
+            itoa(order_id, chr_order_id, 10);
+            strcpy(ois[order_id].order_id, chr_order_id);
+            strcpy(ois[order_id].order_name, order_name);
+            strcpy(ois[order_id].order_price, order_price);
+        
+        printf("==============================================================\n");
 
-    FILE *file = fopen("DB/orderDB.dat", "at");
-    if (file == NULL) {
-        printf("Error opening orderDB.dat file for writing.\n");
-        return;
+        FILE *file = fopen("DB/orderDB.dat", "at");
+        if (file == NULL){
+            printf("Error opening orderDB.dat file for writing.\n");
+            return -1;
+        }
+
+        fprintf(file, "%s,%s,%s\n", ois[order_id].order_id, ois[order_id].order_name, ois[order_id].order_price);
+        fclose(file);
+
+        printf("Order added: ID :%s, Name :%s, Price :%s\n", ois[order_id].order_id, ois[order_id].order_name, ois[order_id].order_price);
+
+        update_id_in_log("current_order_id", order_id+ 1);
+        }
     }
-
-    fprintf(file, "%s,%s,%s\n", new_order.order_id, new_order.order_name, new_order.order_price);
-    fclose(file);
-
-    printf("Order added: ID=%s, Name=%s, Price=%s\n", new_order.order_id, new_order.order_name, new_order.order_price);
-
-
-    update_id_in_log("current_order_id", current_order_id + 1);
-} */
+    return 0;
+}
