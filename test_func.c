@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <C:\src\KMUTT\CSS112\project1\ProjectSingSing\insertIntoDB.c>
-#include <C:\src\KMUTT\CSS112\project1\ProjectSingSing\createDB.c>
+#include "insertIntoDB.c"
+#include "createDB.c"
 #include "header.h"
 
 int main() {
@@ -40,9 +40,7 @@ int main() {
         if (inp == 2) {
             insert_order();
         } 
-        else{
-            printf("Invalid choice! Please try again.\n");
-        }
+        
     }
 
     return 0;
